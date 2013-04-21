@@ -84,6 +84,7 @@ public class HashedIndex implements Index {
 		return answer;
     }
 
+	// Depending on querytype, this method calls the right method.
 	public PostingsList callIntersect(LinkedList<PostingsList> terms, int queryType ){
 		PostingsList result = new PostingsList();
 		if(terms.size() > 0 && queryType!=Index.RANKED_QUERY) {
@@ -104,13 +105,25 @@ public class HashedIndex implements Index {
 		if(queryType==Index.RANKED_QUERY){
 				result = rankedRetrieval(terms);
 				Collections.sort(result.getList());
+				/* We receive and ordered LinkedList<Posting> in ascending order
+				 * based on their score. We then call synonym to go through the top
+				 * scoring documents. 
+				*/
 				Synonyms(result.getList());
 		}
 		return result;
 	}
 	
+	/* Goes through the top scoring documents from rankedRetrieval.
+	 * For each document it reads in all occurences of every word 
+	 * and stores the result in a HashMap<String, Integer> where
+	 * the Integer represents the total occurence of a word through
+	 * all the documents it searches. It then ouputs the words
+	 * occuring the most frequently to the stdout.
+	 */
 	public void Synonyms(LinkedList<Posting> docs)
 	{
+		// This is how many documents we search.
 		for(int i = 0;i<10;i++){
 			Posting doc = docs.get(i);
 			try{
@@ -129,13 +142,14 @@ public class HashedIndex implements Index {
 			
 			}
 		}
+		// This is where we find the most frequent words and ouput them.
 		Iterator it = wordCount.entrySet().iterator();
 		int count0 = 0;
 		int count1 = 1;
 		int count2 = 2;
 		String synonym0 = "";
-		String synonym1 = "";
-		String synonym2 = "";
+		String synonym1 = "";  	
+		String synonym2 = ""; //The most frequent word.
 		while(it.hasNext()){
 			Map.Entry pair = (Map.Entry) it.next();
 			int value = (int)pair.getValue();
@@ -155,7 +169,7 @@ public class HashedIndex implements Index {
 		System.out.println("Nr1: " + synonym2 + ", Nr2: " + synonym1	+ ", Nr3; "  + synonym0);
 		wordCount.clear();
 	}
-	
+	/* Helper function to Synonyms. */
 	public void insertIntoWordCount(String word){
 		if(!wordCount.containsKey(word))
 			wordCount.put(word, 1);
