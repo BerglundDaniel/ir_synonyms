@@ -47,12 +47,12 @@ for i in range(1,numDocs+1):
   #Short synonyms
   if i in shortSymsDocs:
     for n in range(4):
-      fileOut.write("query ")
+      fileOut.write("synonyms ")
 
   #Long synomyms
   if i in longSymsDocs:
     for n in range(4):
-      fileOut.write("query ")
+      fileOut.write("longSynonymsWord ")
 
   fileOut.close()
 
