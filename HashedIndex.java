@@ -129,7 +129,7 @@ public class HashedIndex implements Index {
 		int size = 0;
 		if(docs.size()>10) size = 10;
 		else size = docs.size();
-		for(int i = 0;i<10;i++){
+		for(int i = 0;i<size;i++){
 			Posting doc = docs.get(i);
 			try{
 			File f = new File(docIDs.get( "" + doc.docID ));
@@ -147,7 +147,7 @@ public class HashedIndex implements Index {
 			reader.close();
 			}
 			catch ( IOException e ) {
-			
+				e.printStackTrace();
 			}
 		}
 		Iterator it = wordCount.entrySet().iterator();
@@ -191,9 +191,9 @@ public class HashedIndex implements Index {
 			wordCount.put(word, score);
 		}
 		else{
-			double count = wordCount.get(word);
-			count += docScore*wordSize;
-			wordCount.put(word, count);
+			score = wordCount.get(word);
+			score *= docScore*wordSize;
+			wordCount.put(word, score);
 		}
 	}
 	
