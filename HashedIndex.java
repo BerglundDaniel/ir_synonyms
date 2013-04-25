@@ -152,7 +152,8 @@ public class HashedIndex implements Index {
 		String synonym2 = ""; //The most frequent word.
 		while(it.hasNext()){
 			Map.Entry pair = (Map.Entry) it.next();
-			int value = (int)pair.getValue();
+			Integer tmpvalue = (Integer)pair.getValue();
+			int value=tmpvalue.intValue();
 			if(value>=count0&&value<count1){
 				synonym0  = (String)pair.getKey();
 				count0 = value;
