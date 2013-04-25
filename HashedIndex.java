@@ -24,7 +24,7 @@ public class HashedIndex implements Index {
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
 	private HashMap<Integer,Integer> length = new HashMap<Integer,Integer>();
-	private HashMap<String, Integer> wordCount = new HashMap<String,Integer>();
+	private HashMap<String, Double> wordCount = new HashMap<String,Double>();
 	String ownWord;
 
 
@@ -109,6 +109,7 @@ public class HashedIndex implements Index {
 				 * based on their score. We then call synonym to go through the top
 				 * scoring documents. 
 				*/
+
 				Synonyms(result.getList());
 		}
 		return result;
@@ -121,9 +122,13 @@ public class HashedIndex implements Index {
 	 * all the documents it searches. It then ouputs the words
 	 * occuring the most frequently to the stdout.
 	 */
+
 	public void Synonyms(LinkedList<Posting> docs)
 	{
-		// This is how many documents we search.
+		double docScore = 0;
+		int size = 0;
+		if(docs.size()>10) size = 10;
+		else size = docs.size();
 		for(int i = 0;i<10;i++){
 			Posting doc = docs.get(i);
 			try{
@@ -133,8 +138,11 @@ public class HashedIndex implements Index {
 			int offset = 0;
 			while ( tok.hasMoreTokens() ) {
 				String word = tok.nextToken();
-				if(word.length()>3 && !word.equals(ownWord))
-				insertIntoWordCount(word);
+				if(word.length()>3 && !word.equals(ownWord)){
+					int wordSize = word.length();
+					docScore = doc.score;
+					insertIntoWordCount(word, wordSize, docScore);
+				}
 			}
 			reader.close();
 			}
@@ -142,40 +150,49 @@ public class HashedIndex implements Index {
 			
 			}
 		}
-		// This is where we find the most frequent words and ouput them.
 		Iterator it = wordCount.entrySet().iterator();
-		int count0 = 0;
-		int count1 = 1;
-		int count2 = 2;
+		double count0 = 0;
+		double count1 = 0;
+		double count2 = 0;
 		String synonym0 = "";
-		String synonym1 = "";  	
-		String synonym2 = ""; //The most frequent word.
+		String synonym1 = "";
+		String synonym2 = "";
 		while(it.hasNext()){
 			Map.Entry pair = (Map.Entry) it.next();
-			int value = (int)pair.getValue();
-			if(value>=count0&&value<count1){
-				synonym0  = (String)pair.getKey();
-				count0 = value;
-			}
-			else if(value>=count1&&value<count2){
-				synonym1  = (String)pair.getKey();
-				count1 = value;
-			}
-			else if(value>=count2){
+			double value = (Double)pair.getValue();
+			if(value>=count2){
+				count0 = count1;
+				synonym0 = synonym1;
+				count1 = count2;
+				synonym1 = synonym2;
 				synonym2  = (String)pair.getKey();
 				count2 = value;
 			}
+			else if(value>=count1){
+				count0 = count1;
+				synonym0  = synonym1;
+				synonym1  = (String)pair.getKey();
+				count1 = value;
+			}
+			else if(value>=count0){
+				synonym0  = (String)pair.getKey();
+				count0 = value;
+			}
 		}
-		System.out.println("Nr1: " + synonym2 + ", Nr2: " + synonym1	+ ", Nr3; "  + synonym0);
+		System.out.println("Nr1: " + synonym2 + " " + count2 + ", Nr2: " + synonym1 +" "+ count1	+ ", Nr3; "  + synonym0+" "+ count0);
 		wordCount.clear();
 	}
+	
 	/* Helper function to Synonyms. */
-	public void insertIntoWordCount(String word){
-		if(!wordCount.containsKey(word))
-			wordCount.put(word, 1);
+	public void insertIntoWordCount(String word, int wordSize, double docScore){
+		double score = 0;
+		if(!wordCount.containsKey(word)){
+			score = docScore*wordSize;
+			wordCount.put(word, score);
+		}
 		else{
-			int count = wordCount.get(word);
-			count++;
+			double count = wordCount.get(word);
+			count += docScore*wordSize;
 			wordCount.put(word, count);
 		}
 	}
@@ -186,6 +203,7 @@ public class HashedIndex implements Index {
 			PostingsList q = terms.get(j);
 			double idf = Math.log10((double) length.size()/(double)q.getDocumentFrequency());
 			for(int i = 0;i < q.size(); i++){
+				q.getPosting(i).score = 0;
 				double tfidf = q.getPosting(i).getFrequency() * idf;
 				q.getPosting(i).score += tfidf*idf;
 				q.getPosting(i).score = (double)q.getPosting(i).score/(double)length.get(q.getPosting(i).docID);
