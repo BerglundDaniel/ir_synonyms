@@ -129,7 +129,7 @@ public class HashedIndex implements Index {
 		int size = 0;
 		if(docs.size()>10) size = 10;
 		else size = docs.size();
-		for(int i = 0;i<10;i++){
+		for(int i = 0;i<size;i++){
 			Posting doc = docs.get(i);
 			try{
 			File f = new File(docIDs.get( "" + doc.docID ));
