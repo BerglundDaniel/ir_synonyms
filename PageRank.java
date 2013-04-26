@@ -4,6 +4,8 @@
  * 
  *   First version:  Johan Boye, 2012
  */  
+ 
+package ir;
 
 import java.util.*;
 import java.io.*;

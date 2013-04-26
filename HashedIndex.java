@@ -149,7 +149,7 @@ public class HashedIndex implements Index {
 			reader.close();
 			}
 			catch ( IOException e ) {
-			
+				e.printStackTrace();
 			}
 		}
 		Iterator it = wordCount.entrySet().iterator();
@@ -194,9 +194,15 @@ public class HashedIndex implements Index {
 			wordCount.put(word, score);
 		}
 		else{
+<<<<<<< HEAD
 			double count = wordCount.get(word);
 			count += docScore+wordSize;
 			wordCount.put(word, count);
+=======
+			score = wordCount.get(word);
+			score *= docScore*wordSize;
+			wordCount.put(word, score);
+>>>>>>> c77c4243ea8eca4684c450e6f07f66be5bf7d7af
 		}
 	}
 	

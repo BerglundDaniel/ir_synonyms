@@ -1,3 +1,4 @@
+package ir;
 import java.io.Serializable;
 public class Doc implements Comparable<Doc>, Serializable {
     
