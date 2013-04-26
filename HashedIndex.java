@@ -25,6 +25,7 @@ public class HashedIndex implements Index {
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
 	private HashMap<Integer,Integer> length = new HashMap<Integer,Integer>();
 	private HashMap<String, Double> wordCount = new HashMap<String,Double>();
+	private HashMap<String, Integer> common = new HashMap<String,Integer>();
 	String ownWord;
 
 
@@ -125,6 +126,7 @@ public class HashedIndex implements Index {
 
 	public void Synonyms(LinkedList<Posting> docs)
 	{
+		if(docs.size()>20) commonWords(docs);
 		double docScore = 0;
 		int size = 0;
 		if(docs.size()>10) size = 10;
@@ -138,7 +140,7 @@ public class HashedIndex implements Index {
 			int offset = 0;
 			while ( tok.hasMoreTokens() ) {
 				String word = tok.nextToken();
-				if(word.length()>3 && !word.equals(ownWord)){
+				if(word.length()>3 && !word.equals(ownWord) && !common.containsKey(word)){
 					int wordSize = word.length();
 					docScore = doc.score;
 					insertIntoWordCount(word, wordSize, docScore);
@@ -181,6 +183,7 @@ public class HashedIndex implements Index {
 		}
 		System.out.println("Nr1: " + synonym2 + " " + count2 + ", Nr2: " + synonym1 +" "+ count1	+ ", Nr3; "  + synonym0+" "+ count0);
 		wordCount.clear();
+		common.clear();
 	}
 	
 	/* Helper function to Synonyms. */
@@ -192,11 +195,63 @@ public class HashedIndex implements Index {
 		}
 		else{
 			double count = wordCount.get(word);
-			count += docScore*wordSize;
+			count += docScore+wordSize;
 			wordCount.put(word, count);
 		}
 	}
 	
+	public void commonWords(LinkedList<Posting> docs)
+	{
+		for(int i = docs.size()-10;i<docs.size();i++){
+			Posting doc = docs.get(i);
+			try{
+			File f = new File(docIDs.get( "" + doc.docID ));
+			Reader reader = new FileReader( f );
+			SimpleTokenizer tok = new SimpleTokenizer( reader );
+			while ( tok.hasMoreTokens() ) {
+				String word = tok.nextToken();
+				if(word.length()>3){
+					insertIntoCommon(word);
+				}
+			}
+			reader.close();
+			}
+			catch ( IOException e ) {
+			
+			}
+		}
+		Iterator it = common.entrySet().iterator();
+		int low = 0;
+		int count = 0;
+		int size = common.size();
+		LinkedList<Word> order = new LinkedList<Word>();
+		while(it.hasNext()){
+			Map.Entry pair = (Map.Entry) it.next();
+			int value = (Integer) pair.getValue();
+			String x = (String) pair.getKey();
+			Word tmp = new Word(x, value);
+			order.add(tmp);
+		}
+		Collections.sort(order);
+		common.clear();
+		for(int i = 0; i<50; i++) {
+			Word tmp = order.get(i);
+			common.put(tmp.getName(), tmp.getOccurences());
+			System.out.println(tmp.getName() + ": " + tmp.getOccurences());
+		}
+	}
+	
+	/* Helper function to commonWords. */
+	public void insertIntoCommon(String word){
+		if(!common.containsKey(word)){
+			common.put(word, 1);
+		}
+		else{
+			int count = common.get(word);
+			count ++;
+			common.put(word, count);
+		}
+	}
 	public PostingsList rankedRetrieval(LinkedList<PostingsList> terms){
 		PostingsList answer = new PostingsList();
 		for(int j = 0; j<terms.size();j++){
