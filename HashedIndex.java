@@ -27,6 +27,11 @@ public class HashedIndex implements Index {
 	private HashMap<String, Double> wordCount = new HashMap<String,Double>();
 	private HashMap<String, Integer> common = new HashMap<String,Integer>();
 	String ownWord;
+	
+	//Consts
+	//These two are related to the scoring of a word
+	private static final int wordSizeThreshold=10;
+	private static final double scoreIncrease=0.1;
 
 
     /**
@@ -190,19 +195,24 @@ public class HashedIndex implements Index {
 	public void insertIntoWordCount(String word, int wordSize, double docScore){
 		double score = 0;
 		if(!wordCount.containsKey(word)){
-			score = docScore*wordSize;
+			if(wordSize>wordSizeThreshold)score += (double)docScore*(1+scoreIncrease);
+			else score += docScore;
 			wordCount.put(word, score);
 		}
 		else{
-			double count = wordCount.get(word);
-			count += docScore+wordSize;
-			wordCount.put(word, count);
+			score = wordCount.get(word);
+			if(wordSize>wordSizeThreshold)score += (double)docScore*(1+scoreIncrease);
+			else score += docScore;
+			wordCount.put(word, score);
 		}
 	}
 	
 	public void commonWords(LinkedList<Posting> docs)
 	{
-		for(int i = docs.size()-10;i<docs.size();i++){
+		//Go through the bottom 5% but atleast 10 documents
+		int nDocs=docs.size()-10;
+		if(docs.size()>200) nDocs=docs.size()-(int)(docs.size()*(double)0.05);
+		for(int i = nDocs;i<docs.size();i++){
 			Posting doc = docs.get(i);
 			try{
 			File f = new File(docIDs.get( "" + doc.docID ));
@@ -234,10 +244,15 @@ public class HashedIndex implements Index {
 		}
 		Collections.sort(order);
 		common.clear();
-		for(int i = 0; i<50; i++) {
+		//Get the top commmon
+		int nWords=(int)((double)0.1*order.size()); //10% of the number of words
+		for(int i = 0; i<nWords; i++) {
 			Word tmp = order.get(i);
+			if(tmp.getOccurences()<10){ //If the occurancces are to low we stop
+				break;
+			}
 			common.put(tmp.getName(), tmp.getOccurences());
-			System.out.println(tmp.getName() + ": " + tmp.getOccurences());
+			System.err.println(tmp.getName() + ": " + tmp.getOccurences());
 		}
 	}
 	
