@@ -26,6 +26,7 @@ public class HashedIndex implements Index {
 	private HashMap<Integer,Integer> length = new HashMap<Integer,Integer>();
 	private HashMap<String, Double> wordCount = new HashMap<String,Double>();
 	private HashMap<String, Integer> common = new HashMap<String,Integer>();
+    private LinkedList<String> topGlobalCommon = new LinkedList<String>();
 	String ownWord;
 	
 	//Consts
@@ -33,6 +34,8 @@ public class HashedIndex implements Index {
 	private static final int wordSizeThreshold=10;
 	private static final double scoreIncrease=0.1;
 
+    // size of the global common words top
+    private static final int sizeTopGC = 50;
 
     /**
      *  Inserts this token in the index.
@@ -42,7 +45,6 @@ public class HashedIndex implements Index {
 			PostingsList pL = getPostings(token);
 			pL.add(docID, offset);
 			index.put(token, pL);
-			
 		}
 		else{
 			PostingsList firstPl = new PostingsList();
@@ -56,6 +58,30 @@ public class HashedIndex implements Index {
 			length.put(docID, tmpLength);
 		}
 		else length.put(docID, 1);
+		
+		// update the most global common words Top
+		if(topGlobalCommon.size()<=sizeTopGC)
+		    topGlobalCommon.add(token);
+		else {
+		    int index;
+		    // firstly test if the word should entry the Top
+		    if((getPostings(token).size() > getPostings(topGlobalCommon.get(sizeTopGC-1)).size()) && !topGlobalCommon.contains(token)) {
+			index = 0;
+			while (getPostings(token).size() <= getPostings(topGlobalCommon.get(index)).size())
+			    index++;
+			topGlobalCommon.add(index,token);
+			topGlobalCommon.removeLast();
+		    }
+		    // secondly if the word was already in the Top, then just update the ranking
+		    if(topGlobalCommon.contains(token)) {
+			index = 0;
+			while ((getPostings(token).size() <= getPostings(topGlobalCommon.get(index)).size()) && (index < sizeTopGC))
+				index++;
+			topGlobalCommon.remove(token);
+			topGlobalCommon.add(index,token);
+		    }
+		    
+		}			    
     }
 	
 	
@@ -254,6 +280,13 @@ public class HashedIndex implements Index {
 			common.put(tmp.getName(), tmp.getOccurences());
 			System.err.println(tmp.getName() + ": " + tmp.getOccurences());
 		}
+
+		// Remove the most global common words (contained in the TopGC)
+		for(int i = 0; i<sizeTopGC; i++) {
+		    common.put(topGlobalCommon.get(i), getPostings(topGlobalCommon.get(i)).size());
+		    System.err.println("### " + topGlobalCommon.get(i) + ": " + getPostings(topGlobalCommon.get(i)).size());
+		}
+		    
 	}
 	
 	/* Helper function to commonWords. */
